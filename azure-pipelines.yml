@@ -9,6 +9,10 @@ trigger:
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  TF_WORKING_DIR: '$(System.DefaultWorkingDirectory)/terraform'
+  SERVICE_CONNECTION: 'azure-connection'
+
 stages:
   - stage: terrform init
     displayName: terraform init
@@ -18,4 +22,25 @@ stages:
          - task: TerraformInstaller@1
            inputs:
              terraformVersion: 'latest'
-            
+         - task: TerraformTask@5
+           inputs:
+             provider: 'azurerm'
+             command: 'init'
+             backendServiceArm: 'azuredevops-serviceconnection'
+             backendAzureRmStorageAccountName: 'storageacc316'
+             backendAzureRmContainerName: 'tfstate'
+             backendAzureRmKey: 'dev.tfstate'
+stages:
+  - stage: terrform init
+    displayName: terraform init
+    jobs:     
+      - job: plan
+        steps:
+          - task: TerraformInstaller@1
+            inputs:
+              terraformVersion: 'latest'
+          - task: TerraformTask@5
+            inputs:
+              provider: 'azurerm'
+              command: 'plan'
+              environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
