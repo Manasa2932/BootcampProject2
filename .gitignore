@@ -1,0 +1,14 @@
+# Terraform cache
+**/.terraform/*
+
+# State files
+*.tfstate
+*.tfstate.*
+terraform.tfstate
+terraform.tfstate.*
+
+# Lock file (optional but common)
+.terraform.lock.hcl
+
+# Crash logs
+crash.log

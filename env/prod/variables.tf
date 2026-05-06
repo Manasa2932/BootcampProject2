@@ -1,0 +1,12 @@
+variable "rg_name" {}
+variable "location" {}
+variable "vnet_name" {}
+variable "address_space" {}
+variable "subnet_name" {}
+variable "subnet_prefix" {}
+variable "aks_name" {}
+variable "dns_prefix" {}
+variable "node_count" {}
+variable "vm_size" {}
+variable "service_cidr" {}
+variable "dns_service_ip" {}
