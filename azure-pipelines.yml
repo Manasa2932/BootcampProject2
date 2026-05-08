@@ -47,7 +47,7 @@ stages:
         command: 'plan'
         workingDirectory: '$(terraformWorkingDir)'
         environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
-        commandOptions: '-lock=false -input=false tfplan'
+        commandOptions: '-var-file=dev.tfvars -out=tfplan -lock=false -input=false'
 
     - task: PublishPipelineArtifact@1
       displayName: Publish tfplan
@@ -97,4 +97,4 @@ stages:
         command: 'apply'
         workingDirectory: '$(terraformWorkingDir)'
         environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
-        commandOptions: 'tfplan'
+        commandOptions: '-lock=false -input=false tfplan'
