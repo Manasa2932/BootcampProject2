@@ -13,13 +13,11 @@ variables:
   terraformWorkingDir: '$(Build.SourcesDirectory)/env/dev'
 
 stages:
-# =========================
-# PLAN STAGE
-# =========================
 - stage: TerraformPlan
   displayName: Terraform Plan
   jobs:
   - job: plan
+    timeoutInMinutes: 30
     steps:
     - checkout: self
 
@@ -47,23 +45,15 @@ stages:
         command: 'plan'
         workingDirectory: '$(terraformWorkingDir)'
         environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
-        commandOptions: '-var-file=dev.tfvars -out=tfplan -lock=false -input=false'
+        commandOptions: '-var-file=dev.tfvars -lock=false -input=false'
 
-    - task: PublishPipelineArtifact@1
-      displayName: Publish tfplan
-      inputs:
-        targetPath: '$(terraformWorkingDir)/tfplan'
-        artifact: tfplan
-
-# =========================
-# APPLY STAGE
-# =========================
 - stage: TerraformApply
   displayName: Terraform Apply
   dependsOn: TerraformPlan
   condition: succeeded()
   jobs:
   - job: apply
+    timeoutInMinutes: 90
     steps:
     - checkout: self
 
@@ -84,12 +74,6 @@ stages:
         backendAzureRmContainerName: 'tfstate'
         backendAzureRmKey: 'dev.tfstate'
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download tfplan
-      inputs:
-        artifact: tfplan
-        path: '$(terraformWorkingDir)'
-
     - task: TerraformTask@5
       displayName: Terraform Apply
       inputs:
@@ -97,4 +81,4 @@ stages:
         command: 'apply'
         workingDirectory: '$(terraformWorkingDir)'
         environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
-        commandOptions: '-lock=false -input=false tfplan'
+        commandOptions: '-var-file=dev.tfvars -lock=false -input=false -auto-approve'
