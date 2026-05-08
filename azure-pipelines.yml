@@ -14,7 +14,7 @@ variables:
   SERVICE_CONNECTION: 'azure-connection'
 
 stages:
-  - stage: terrform init
+  - stage: terrform_init
     displayName: terraform init
     jobs:
       - job: init
@@ -30,9 +30,8 @@ stages:
              backendAzureRmStorageAccountName: 'storageacc316'
              backendAzureRmContainerName: 'tfstate'
              backendAzureRmKey: 'dev.tfstate'
-stages:
-  - stage: terrform init
-    displayName: terraform init
+  - stage: terrform_plan
+    displayName: terraform plan
     jobs:     
       - job: plan
         steps:
