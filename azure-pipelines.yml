@@ -13,55 +13,88 @@ variables:
   terraformWorkingDir: '$(Build.SourcesDirectory)/env/dev'
 
 stages:
-  - stage: terraform
-    displayName: Terraform
-    jobs:
-      - job: init
-        steps:
-          - checkout: self
+# =========================
+# PLAN STAGE
+# =========================
+- stage: TerraformPlan
+  displayName: Terraform Plan
+  jobs:
+  - job: plan
+    steps:
+    - checkout: self
 
-          - task: TerraformInstaller@1
-            inputs:
-              terraformVersion: 'latest'
+    - task: TerraformInstaller@1
+      displayName: Install Terraform
+      inputs:
+        terraformVersion: 'latest'
 
-# -----------------------------
-#  Terraform Init (DEV backend)
-# -----------------------------
-          - task: TerraformTask@5
-            inputs:
-              provider: 'azurerm'
-              command: 'init'
-              workingDirectory: '$(terraformWorkingDir)'
-              backendServiceArm: 'azuredevops-serviceconnection'
-              backendAzureRmStorageAccountName: 'storageacc316'
-              backendAzureRmContainerName: 'tfstate'
-              backendAzureRmKey: 'dev.tfstate'
+    - task: TerraformTask@5
+      displayName: Terraform Init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(terraformWorkingDir)'
+        backendServiceArm: 'azuredevops-serviceconnection'
+        backendAzureRmResourceGroupName: 'RG'
+        backendAzureRmStorageAccountName: 'storageacc316'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'dev.tfstate'
 
-# -----------------------------
-#  Terraform Validate
-# -----------------------------
-          - task: TerraformTask@5
-            inputs:
-              provider: 'azurerm'
-              command: 'validate'
-              workingDirectory: '$(terraformWorkingDir)'
+    - task: TerraformTask@5
+      displayName: Terraform Plan
+      inputs:
+        provider: 'azurerm'
+        command: 'plan'
+        workingDirectory: '$(terraformWorkingDir)'
+        environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
+        commandOptions: '-out=tfplan'
 
-# -----------------------------
-#  Terraform Plan (DEV)
-# -----------------------------
-          - task: TerraformTask@5
-            inputs:
-              provider: 'azurerm'
-              command: 'plan'
-              workingDirectory: '$(terraformWorkingDir)'
-              environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
+    - task: PublishPipelineArtifact@1
+      displayName: Publish tfplan
+      inputs:
+        targetPath: '$(terraformWorkingDir)/tfplan'
+        artifact: tfplan
 
-# -----------------------------
-#  Terraform Apply (DEV)
-# -----------------------------
-          - task: TerraformTask@5
-            inputs:
-              provider: 'azurerm'
-              command: 'apply'
-              workingDirectory: '$(terraformWorkingDir)'
-              environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
+# =========================
+# APPLY STAGE
+# =========================
+- stage: TerraformApply
+  displayName: Terraform Apply
+  dependsOn: TerraformPlan
+  condition: succeeded()
+  jobs:
+  - job: apply
+    steps:
+    - checkout: self
+
+    - task: TerraformInstaller@1
+      displayName: Install Terraform
+      inputs:
+        terraformVersion: 'latest'
+
+    - task: TerraformTask@5
+      displayName: Terraform Init
+      inputs:
+        provider: 'azurerm'
+        command: 'init'
+        workingDirectory: '$(terraformWorkingDir)'
+        backendServiceArm: 'azuredevops-serviceconnection'
+        backendAzureRmResourceGroupName: 'RG'
+        backendAzureRmStorageAccountName: 'storageacc316'
+        backendAzureRmContainerName: 'tfstate'
+        backendAzureRmKey: 'dev.tfstate'
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tfplan
+      inputs:
+        artifact: tfplan
+        path: '$(terraformWorkingDir)'
+
+    - task: TerraformTask@5
+      displayName: Terraform Apply
+      inputs:
+        provider: 'azurerm'
+        command: 'apply'
+        workingDirectory: '$(terraformWorkingDir)'
+        environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
+        commandOptions: 'tfplan'
