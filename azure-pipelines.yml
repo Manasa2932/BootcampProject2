@@ -10,8 +10,9 @@ pool:
   vmImage: ubuntu-latest
 
 variables:
-  TF_WORKING_DIR: '$(System.DefaultWorkingDirectory)/terraform'
-  SERVICE_CONNECTION: 'azure-connection'
+  terraformWorkingDir: '$(Build.SourcesDirectory)/env/dev'# Specifies the directory where Terraform configuration files for the DEV environment are located
+
+#  Install Terraform
 
 stages:
   - stage: terrform_init
@@ -19,9 +20,13 @@ stages:
     jobs:
       - job: init
         steps:
+         - checkout: self         
          - task: TerraformInstaller@1
            inputs:
              terraformVersion: 'latest'
+# -----------------------------             
+#  Terraform Init (DEV backend)
+# -----------------------------
          - task: TerraformTask@5
            inputs:
              provider: 'azurerm'
@@ -30,16 +35,29 @@ stages:
              backendAzureRmStorageAccountName: 'storageacc316'
              backendAzureRmContainerName: 'tfstate'
              backendAzureRmKey: 'dev.tfstate'
-  - stage: terrform_plan
-    displayName: terraform plan
-    jobs:     
-      - job: plan
-        steps:
-          - task: TerraformInstaller@1
-            inputs:
-              terraformVersion: 'latest'
-          - task: TerraformTask@5
-            inputs:
-              provider: 'azurerm'
-              command: 'plan'
-              environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
+# -----------------------------
+#  Terraform Validate
+# -----------------------------
+         - task: TerraformTask@5
+           inputs:
+             provider: 'azurerm'
+             command: 'validate'
+
+# -----------------------------
+# Terraform Plan (DEV)
+# -----------------------------
+         - task: TerraformTask@5
+           inputs:
+             provider: 'azurerm'
+             command: 'plan'
+             environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
+
+# -----------------------------
+#  Terraform Apply (DEV)
+# -----------------------------
+         - task: TerraformTask@5
+           inputs:
+             provider: 'azurerm'
+             command: 'apply'
+             environmentServiceNameAzureRM: 'azuredevops-serviceconnection'
+   
